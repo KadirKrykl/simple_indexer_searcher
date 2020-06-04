@@ -117,14 +117,15 @@ def searchTFIDF(query):
     #Calculate TF*IDF Relevance Score
     results={}
     for word in query:
-        occurances=invertedIndex[word]
-        idf=math.log2(len(docList)/len(occurances))
-        for tf,docId in occurances:
-            tf = tf/len(docList[int(docId)-1]['tokens'])
-            if docId in results.keys():
-                results[docId]+=idf*tf
-            else:
-                results[docId] = idf*tf
+        if word in invertedIndex.keys():
+            occurances=invertedIndex[word]
+            idf=math.log2(len(docList)/len(occurances))
+            for tf,docId in occurances:
+                tf = tf/len(docList[int(docId)-1]['tokens'])
+                if docId in results.keys():
+                    results[docId]+=idf*tf
+                else:
+                    results[docId] = idf*tf
     return results
 
 def searchBM25(query):
@@ -133,39 +134,42 @@ def searchBM25(query):
     b = 0.75
     results={}
     for word in query:
-        occurances=invertedIndex[word]
-        idf=math.log(len(docList)/len(occurances))
-        for tf,docId in occurances:
-            divTop = (tf*(k+1))
-            dl = len(docList[int(docId)-1]['tokens'])
-            divBot = (tf + (k * (1 - b + (b*(dl/avgDl)))))
-            if docId in results.keys():
-                results[docId] += idf*(divTop/divBot)
-            else:
-                results[docId] = idf*(divTop/divBot)
+        if word in invertedIndex.keys():
+            occurances=invertedIndex[word]
+            idf=math.log(len(docList)/len(occurances))
+            for tf,docId in occurances:
+                divTop = (tf*(k+1))
+                dl = len(docList[int(docId)-1]['tokens'])
+                divBot = (tf + (k * (1 - b + (b*(dl/avgDl)))))
+                if docId in results.keys():
+                    results[docId] += idf*(divTop/divBot)
+                else:
+                    results[docId] = idf*(divTop/divBot)
     return results
 
 def searchDFI(query):
     #Calculate DFI Relevance Score
     results={}
     for word in query:
-        occurances=invertedIndex[word]
-        TF = 0
-        for tf,docId in occurances:
-            TF += tf
-        N = topWord
-        for tf,docId in occurances:
-            dl = len(docList[int(docId)-1]['tokens'])
-            e = (TF * dl) / N
-            if docId in results.keys():
-                dfi = ( ( tf - e ) / ( math.sqrt(e) ) ) + 1
-                results[docId]+= math.log2( dfi )
-            else:
-                dfi = ( ( tf - e ) / ( math.sqrt(e) ) ) + 1
-                results[docId] = math.log2( dfi )
+        if word in invertedIndex.keys():
+            occurances=invertedIndex[word]
+            TF = 0
+            for tf,docId in occurances:
+                TF += tf
+            N = topWord
+            for tf,docId in occurances:
+                dl = len(docList[int(docId)-1]['tokens'])
+                e = (TF * dl) / N
+                if docId in results.keys():
+                    dfi = ( ( tf - e ) / ( math.sqrt(e) ) ) + 1
+                    results[docId]+= math.log2( dfi )
+                else:
+                    dfi = ( ( tf - e ) / ( math.sqrt(e) ) ) + 1
+                    results[docId] = math.log2( dfi )
     return results
 
 def searchQuery(query,scoring='tfidf'):
+    query = normalize(query)
     query=query.split(' ')
     if scoring=='dfi':
         results = searchDFI(query)
@@ -186,16 +190,39 @@ def searchQuery(query,scoring='tfidf'):
         resultNum+=1
     return results
 
-def search(query):
+def search(query, scoring='tfidf'):
     print("\n %s Searching..." % (query) )
     start_time = time.time()
-    responses=searchQuery(query,'dfi')
+    responses=searchQuery(query,scoring)
     elapsed_time = time.time() - start_time
     print(" %06.4fs \n Total Result: %d \n" % (elapsed_time,len(responses)))
 
-    query=query.split(' ')
     for response in responses.values():
         output=highlight_term(response['docId'],response['relevanceScore'])
         print(output)
+        if response['id'] == 10:
+            break
+    return list(responses.values())[:10]
 
-responses = search("can")
+
+queryList=["Edinburgh nice place?",
+            "Where is edinburgh?",
+            "Situation of postwar",
+            "Great Britain vs Italy",
+            "Healthcare industry changes",
+            "Football news",
+            "Effects of bank",
+            "the best in the sports world",
+            "what is COBRA laws",
+            "economics in Scotland"]
+
+
+responses = dict()
+for queryID in range(len(queryList)):
+    responses[queryID]=dict()
+    responses[queryID]['query'] = queryList[queryID]
+    responses[queryID]['tfidf'] = search(queryList[queryID],'tfidf')
+    responses[queryID]['bm25'] = search(queryList[queryID],'bm25')
+    responses[queryID]['dfi'] = search(queryList[queryID],'dfi')
+
+print(responses)
