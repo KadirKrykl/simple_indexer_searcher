@@ -206,7 +206,7 @@ def search(query, scoring='tfidf'):
 
 
 queryList=["Edinburgh nice place?",
-            "Where is edinburgh?",
+            "elections of edinburgh?",
             "Situation of postwar",
             "Great Britain vs Italy",
             "Healthcare industry changes",
@@ -216,6 +216,18 @@ queryList=["Edinburgh nice place?",
             "what is COBRA laws",
             "economics in Scotland"]
 
+queryTrues={
+    1:['1','576','1145'],
+    2:['27','560','567','569','574','577','587','593'],
+    3:['51','1391'],
+    4:['50','337','472'],
+    5:['805','856','881','882','884','895','898'],
+    6:['281','1035','1412','1419','1420','1427','1433','1444'],
+    7:['437','453','467','499','504','531','627','636','658','686'],
+    8:['5','207','307','322','325','346','1142','1440'],
+    9:['873','878','880','884','899'],
+    10:['7','24','50','551','1126','1202']
+}
 
 responses = dict()
 for queryID in range(len(queryList)):
@@ -225,4 +237,31 @@ for queryID in range(len(queryList)):
     responses[queryID]['bm25'] = search(queryList[queryID],'bm25')
     responses[queryID]['dfi'] = search(queryList[queryID],'dfi')
 
-print(responses)
+mapDict = {
+    'tfidf':0,
+    'bm25':0,
+    'dfi':0
+}
+
+for queryID, results in responses.items():
+    for model,result in results.items():
+        if model != 'query':
+            resCount = 0
+            findCount = 0
+            sumCount = 0
+            for item in result:
+                resCount+=1
+                if item['docId'] in queryTrues[queryID+1]:
+                    findCount+=1
+                sumCount+= findCount/resCount
+            mapDict[model] += sumCount / 10
+
+
+print("Model Name   =>   MAP Score \n")
+for model in mapDict.keys():
+    mapDict[model] = mapDict[model] / 10
+    print("{0}  => {1} \n".format(model,mapDict[model]))
+
+mapDict={k: v for k, v in sorted(mapDict.items(), key=lambda item: item[1], reverse=True)}
+print("Best Weighting Model => " + next(iter(mapDict)) )
+
