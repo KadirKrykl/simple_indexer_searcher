@@ -10,4 +10,5 @@ Raw text files are divided into 30 folders, which are each columnist.
 
 ## Workflow
 For detailed information, you can review the notebook page of the coding.
+
 [Colab Notebook](https://drive.google.com/file/d/1awUA0Fdur9doMFgRTlKKB4XVXPpJGfI3/view?usp=sharing)
